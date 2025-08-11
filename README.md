@@ -245,4 +245,4 @@ MIT License
 ## Author
 
 **Peter Lemule**  
-[GitHub](https://github.com/lems01) · [LinkedIn](https://linkedin.com/in/peter-lemule-025a70136)
+[GitHub](https://github.com/JohnOkari) · [LinkedIn](https://www.linkedin.com/in/johnnokari-001/)
