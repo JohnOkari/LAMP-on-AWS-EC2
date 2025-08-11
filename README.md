@@ -1,175 +1,165 @@
 
-# 🌐 Web Stack Implementation (LAMP Stack) in AWS
+# LAMP on AWS EC2: Hands‑on Guide and Setup
 
-This project demonstrates the setup and deployment of a **LAMP (Linux, Apache, MySQL, PHP)** web server stack on an **Amazon EC2 instance**. It is part of a hands-on DevOps/Cloud learning experience focused on Infrastructure provisioning, configuration, and automation on AWS.
-
----
-
-## 📌 Table of Contents
-
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Technologies Used](#technologies-used)
-- [Prerequisites](#prerequisites)
-- [Setup Guide](#setup-guide)
-- [Testing](#testing)
-- [Security](#security)
-- [License](#license)
+This repository walks through provisioning an Ubuntu server on AWS EC2 and configuring a complete LAMP stack: Linux, Apache, MySQL, and PHP. The guide is written for learners and practitioners who want a clear, reproducible path from a fresh instance to a working web server.
 
 ---
 
-## 📖 Overview
+## Contents
 
-A **LAMP stack** is a collection of open-source software used to host dynamic websites and web applications. This project involves provisioning a virtual server (EC2) on AWS and installing/configuring:
-
-- **Linux** – Ubuntu Server
-- **Apache** – Web Server
-- **MySQL** – Database Server
-- **PHP** – Server-side scripting
+- Overview
+- Architecture at a glance
+- What you’ll use
+- Prerequisites
+- Step‑by‑step setup
+- Testing your stack
+- Hardening tips
+- License and attribution
 
 ---
 
-## 🧱 Architecture
+## Overview
 
-```plaintext
-User → Internet → AWS EC2 (Ubuntu) → Apache → PHP → MySQL
+The classic LAMP stack powers many dynamic sites and apps. In this walkthrough you will:
+
+- Launch an Ubuntu EC2 instance
+- Install and configure Apache
+- Secure and configure MySQL
+- Install PHP and required modules
+- Create a simple site and enable a dedicated Apache virtual host
+
+By the end, you’ll be able to browse to your EC2 public IP and see PHP executing on Apache, backed by MySQL.
+
+---
+
+## Architecture at a glance
+
+```text
+Client → Internet → AWS EC2 (Ubuntu) → Apache → PHP → MySQL
 ```
 
-- EC2 Instance (Ubuntu 20.04)
-- Security Group (HTTP, SSH, MySQL access)
+- Ubuntu (EC2)
+- Security Group with HTTP(80), SSH(22), and optionally MySQL(3306)
 - Apache HTTP Server
-- MySQL Database Server
-- PHP and PHP modules
+- MySQL Server
+- PHP with MySQL integration
 
 ---
 
-## 🛠 Technologies Used
+## What you’ll use
 
-- ✅ AWS EC2 (Ubuntu)
-- ✅ Apache2
-- ✅ MySQL Server
-- ✅ PHP 7.4+
-- ✅ Bash Shell Scripting
-- ✅ GitHub for version control
-
----
-
-## 📋 Prerequisites
-
-Before you begin, make sure you have the following:
-
-- AWS Account
-- SSH Key pair
-- IAM user with EC2 permissions
-- Git installed on your local machine
-- Basic understanding of Linux commands
+- AWS EC2 (Ubuntu 20.04/22.04)
+- Apache2
+- MySQL Server (8.x)
+- PHP (7.4+ or 8.x) and extensions
+- Bash shell
+- Git (for version control)
 
 ---
 
-## ⚙️ Setup Guide
+## Prerequisites
 
-### 1. Launch EC2 Instance
+- AWS account and an IAM user with EC2 permissions
+- An SSH key pair (PEM)
+- Basic Linux command‑line familiarity
+- A browser to verify the website
 
-- Register a new AWS account
-- Choose Ubuntu Server 20.04
-- Configure instance type (e.g., t2.micro – Free Tier)
-- Add inbound rules for:
-  - SSH (port 22)
-  - HTTP (port 80)
-  - MySQL (port 3306) [Optional – for remote access]
+---
 
-![AWS Screenshot](/assets/AWSPAGE1.png)
+## Step‑by‑step setup
 
-![AWS Screenshot](/assets/AWSPAGE2.png)
+### 1) Launch an EC2 instance
 
-![AWS Screenshot](/assets/AWSPAGE3.png)
+- Choose Ubuntu Server 20.04 or 22.04 LTS (t2.micro is fine for Free Tier)
+- Open inbound rules for:
+  - SSH (22) from your IP
+  - HTTP (80) from anywhere
+  - Optional: MySQL (3306) if you need remote DB access
 
-### 2. Change permmission on .pem file and connect via SSH
+![EC2 launch — step 1](./assets/AWS_PAGE1.png)
 
-- Change permissions for the private key file (.pem), otherwise you will get bad permissions
+![EC2 launch — step 2](./assets/AWS_PAGE2.png)
+
+![EC2 launch — step 3](./assets/AWS_PAGE3.png)
+
+### 2) Fix key permissions and connect over SSH
+
 ```bash
 chmod 0400 your-key.pem
+ssh -i your-key.pem ubuntu@<your-ec2-public-ip>
 ```
 
-- Connect to the instance using the bash script below
-```
-ssh -i your-key.pem ubuntu@your-ec2-public-ip
-```
-
-### 3. Update System Packages
+### 3) Update the system
 
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
 
-### 4. Install Apache
+### 4) Install and verify Apache
 
 ```bash
-sudo apt install apache2 -y
+sudo apt install -y apache2
 ```
 
-Visit `http://<your-ec2-public-ip>` to verify Apache is running.
+Visit `http://<your-ec2-public-ip>` — you should see the Apache default page.
 
-### 5. Installation and configuration of MySQL
+### 5) Install and secure MySQL
 
-- Run the below command to install MySQL 
 ```bash
-sudo apt install mysql-server -y
-sudo mysql_secure_installation
+sudo apt install -y mysql-server
 ```
-- Login to MySQL
+
+Enter the MySQL shell as root:
+
 ```bash
 sudo mysql
 ```
 
-![MySQL Login](assets/MySQL.png)
+Optionally switch the root account to the native password plugin and set a password:
 
-- Set the password
-```MySQL
-ALTERUSER'root'@'localhost' IDENTIFIED WITH mysql_native_password BY'P@ssw0rd';
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'P@ssw0rd';
+FLUSH PRIVILEGES;
 ```
-- Exit the MySQL shell
-```MySQL
+
+```sql
 exit;
 ```
-- Start the interactive script by running 
+
+Run the secure setup script and follow the prompts:
+
 ```bash
 sudo mysql_secure_installation
 ```
-- When you are done with the interactive script, trying logging in with the command below
-```bash
-sudo mysql -p
-```
-It will prompt you for password used after changing the root password
 
-### 6. Install PHP
-You have Apache installed to serve your content and MySQL installed to store and manage your data. [PHP](https://www.php.net/) is the component of our setup that will process code to display dynamic content to the end user. In addition to the `php` package, you’ll need `php-mysql`, a PHP module that allows PHP to communicate with MySQL-based databases. You’ll also need `libapache2-mod-php` to enable Apache to handle PHP files. Core PHP packages will automatically be installed as dependencies.
+Log in to confirm:
 
-- To install these 3 packages at once, run:
 ```bash
-sudo apt install php libapache2-mod-php php-mysql -y
+sudo mysql -u root -p
 ```
-- Once the installation is dne, you can run the following command to confirm the PHP version
+
+![MySQL shell](./assets/MySQL.png)
+
+### 6) Install PHP and extensions
+
 ```bash
+sudo apt install -y php libapache2-mod-php php-mysql
 php -v
 ```
 
-### 7. Test PHP
-To test your setup with a PHP script, it’s best to set up a proper [Apache Virtual Host](https://httpd.apache.org/docs/current/vhosts/) to hold your website’s files and folders. Virtual host allows you to have multiple websites located on a single machine and users of the websites will not even notice it.
-- Create a virtual host for your website using Apache
+### 7) Create a site and enable an Apache Virtual Host
+
+Create a web root and give ownership to the current user:
+
 ```bash
-sudo mkdir /var/www/projectlamp
+sudo mkdir -p /var/www/projectlamp
+sudo chown -R "$USER":"$USER" /var/www/projectlamp
 ```
-- You need to assign ownership of the directory with the `$USER` environment variable, which will reference the current system user
+
+Create a new virtual host definition:
+
 ```bash
-sudo chown -R $USER:$USER /var/www/projectlamp
-```
-- Then, create and open a new configuration file in Apache's sites-available directiry using your preffered command-line editor. I will ne using `vi` or `vim` 
-```bash
-sudo vi /etc/apache2/sites-available/projectlamp.conf
-```
-- Copy and paste the text below
-```apacheconf
+sudo tee /etc/apache2/sites-available/projectlamp.conf >/dev/null <<'APACHECONF'
 <VirtualHost *:80>
     ServerName projectlamp
     ServerAlias www.projectlamp
@@ -178,83 +168,81 @@ sudo vi /etc/apache2/sites-available/projectlamp.conf
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
+APACHECONF
 ```
-- To save, hit `esc` button then type `wq` and hit `ENTER` on the keyboard
-- You can use the `ls` command to show the new file in the `sites-available` directory
-```bash
-sudo ls /etc/apache2/sites-available
-```
-- Use the `a2ensite` command to enable the newvirtual host
+
+Enable the site and disable the default:
+
 ```bash
 sudo a2ensite projectlamp
-```
-- Disable the default that comes with Apache
-```bash
 sudo a2dissite 000-default
-```
-- To make sure your configuration file doesn't contain syntax errors, run;
-```bash
 sudo apache2ctl configtest
-```
-- Finally, reload Apache so these changes take effect
-```bash
 sudo systemctl reload apache2
 ```
-- The new website is active, but the web root */var/www/projectlamp* is still empty. create an index.ht,l file in that location
-```bash
-sudo echo 'Hello LAMP from hostname' $(TOKEN=`curl -X PUT
-"http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` &&
-curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/public-
-hostname) 'with public IP' $(TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-
-aws-ec2-metadata-token-ttl-seconds: 21600"` && curl -H "X-aws-ec2-metadata-token: $TOKEN" -s
-http://169.254.169.254/latest/meta-data/public-ipv4) > /var/www/projectlamp/index.html
-```
 
-### 8. Enable PHP on the website
-By default, Apache's DirectoryIndex settings prioritize `index.html` over `index.php`. This behavior is useful for setting up a temporary "maintenance page" by creating an index.html file with an informative message. This index.html page will be served to visitors instead of the regular `index.php` application page. Once maintenance is complete, renaming or removing index.html will revert the site back to the standard application page.
+### 8) Prioritize index.php over index.html
 
-To change this default behavior and have index.php take precedence, you need to edit the `/etc/apache2/mods-enabled/dir.conf` file and change the order of files listed in the DirectoryIndex directive.
+Apache’s default `DirectoryIndex` prefers `index.html`. To make PHP pages load first, edit:
 
 ```bash
-sudo vim /etc/apache2/mods-enabled/dir.conf
+sudo nano /etc/apache2/mods-enabled/dir.conf
 ```
 
-After saving and closing the file, you will need to reload Apache for the changes to take effect
+Move `index.php` to the front, for example:
+
+```apacheconf
+DirectoryIndex index.php index.html index.cgi index.pl index.xhtml index.htm
+```
+
+Then reload Apache:
 
 ```bash
 sudo systemctl reload apache2
 ```
 
-## ✅ Testing
+---
 
-create a new PHP script to test that PHP is correctly installed and configured on your server.
+## Testing your stack
+
+Create a simple PHP info page in your site root:
 
 ```bash
 echo "<?php phpinfo(); ?>" | sudo tee /var/www/projectlamp/index.php
 ```
 
-- Open browser and enter: `http://<your-ec2-public-ip>`
-- Test Apache, PHP, and Database connection using a test page.
+Open `http://<your-ec2-public-ip>` in your browser. You should see the PHP information page rendered by Apache.
 
-![PHP Test Page](assets/PHP.png)
+![PHP test page](./assets/PHP%20page.png)
 
-## 🔐 Security
+Optional: Create a minimal HTML homepage (served when `index.php` is removed):
 
-- Delete `index.php` after testing to avoid exposing server info:
-  
-  ```bash
-  sudo rm /var/www/projectlamp/index.php
-  ```
+```bash
+echo "<h1>Hello from LAMP on EC2</h1>" | sudo tee /var/www/projectlamp/index.html
+```
 
 ---
 
-## 📄 License
+## Hardening tips
 
-This project is licensed under the MIT License.
+- Remove `index.php` (phpinfo) after testing; it exposes environment details.
+
+```bash
+sudo rm /var/www/projectlamp/index.php
+```
+
+- Keep the system updated: `sudo apt update && sudo apt upgrade -y`
+- Use strong MySQL credentials and restrict remote DB access if not required
+- Consider enabling a firewall (UFW) to allow only needed ports
 
 ---
 
-## 👨‍💻 Author
+## License
+
+MIT License
+
+---
+
+## Author
 
 **Peter Lemule**  
-📎 [GitHub](https://github.com/lems01) | 🔗 [LinkedIn](https://linkedin.com/in/peter-lemule-025a70136)s
+[GitHub](https://github.com/lems01) · [LinkedIn](https://linkedin.com/in/peter-lemule-025a70136)
